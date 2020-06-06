@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -11,6 +11,7 @@
     <!-- Bootstrap core CSS -->
     <!-- <link href="./css/bootstrap.css" rel="stylesheet">-->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/bootstrap-reboot.min.css">
 
     <style>
       .bd-placeholder-img {
@@ -29,257 +30,55 @@
       }
     </style>
     <!-- Custom styles for this template -->
-    <link href="dashboard.css" rel="stylesheet">
+  <link href="dashboard.css" rel="stylesheet">
   </head>
   <body>
-    <nav class="navbar navbar-dark bg-custom sticky-top flex-md-nowrap p-0 shadow">
-  <a class="navbar-brand col-md-3 col-lg-2 mr-0 px-3" href="index.html">そこにまる。</a>
-  <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-toggle="collapse" data-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
-  </button>
+    <nav class="navbar navbar-dark bg-custom sticky-top navbar-expand-md px-0 flex-shrink-0 shadow">
+      <a class="navbar-brand col-md-3 col-lg-2 mr-0 px-3" href="index.html">そこにまる。</a>
+      <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-toggle="collapse" data-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <form class="form-inline">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <button class="btn btn-success" type="button" id="currentLocation" onclick="getCurrentPosition()">現在地に移動</button>
+          </div>
+          <label class="sr-only" for="placeToSearch">まるを描く場所</label>
+          <input type="text" class="form-control form-control-light mr-sm-3" id="placeToSearch" placeholder="場所" size="50">
+        </div>    
+        <div class="input-group mr-sm-3">
+          <label class="sr-only" for="raduisToDraw">半径</label>
+          <input type="text" class="form-control" aria-label="Text input with segmented dropdown button" id="raduisToDraw" placeholder="半径" size="6">
+          <div class="dropdown">
+            <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">km</button>
+            <ul id="raduisUnits" class="dropdown-menu dropdown-menu-right text-right">
+              <li><button class="dropdown-item" value="km">km</button></li>
+              <li><button class="dropdown-item" value="m">m</button></li>
+            </ul>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" onclick="buttonClickHandler()">まるを描く</button>
+      </form>
+      <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+          <a class="nav-link" href="#">利用規約</a>
+        </li>
+      </ul>
+    </nav>
 
-  <form class="form-inline">
-    <div class="input-group">
-      <div class="input-group-prepend">
-        <button class="btn btn-success" type="button" id="currentLocation" onclick="getCurrentPosition()">現在地に移動</button>
-      </div>
-        <label class="sr-only" for="placeToSearch">まるを描く場所</label>
-        <input type="text" class="form-control form-control-light mr-sm-3" id="placeToSearch" placeholder="場所" size="50">
-    </div>    
-    <div class="input-group mr-sm-3">
-      <label class="sr-only" for="raduisToDraw">半径</label>
-      <input type="text" class="form-control" aria-label="Text input with segmented dropdown button" id="raduisToDraw" placeholder="半径" size="6">
-      <div class="dropdown">
-        <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">km</button>
-        <ul id="raduisUnits" class="dropdown-menu dropdown-menu-right text-right">
-          <li><button class="dropdown-item" value="km">km</button></li>
-          <li><button class="dropdown-item" value="m">m</button></li>
-        </ul>
+    <div class="container-fluid d-flex flex-column flex-grow-1 vh-auto overflow-hidden">
+      <div class="row flex-grow-1 overflow-hidden">
+        <div class="col-sm-0 scroll">
+          <div id="card-container"></div>
+        </div>
+        <div class='col-sm-12'>
+          <div id='map' style="display: block; height: 1000px;"></div>
+        </div>
       </div>
     </div>
-    <button type="submit" class="btn btn-primary" onclick="buttonClickHandler()">まるを描く</button>
-  </form>
-  
-  <ul class="navbar-nav px-3">
-    <li class="nav-item text-nowrap">
-      <a class="nav-link" href="#">利用規約</a>
-    </li>
-  </ul>
-</nav>
 
-<div class="container-fluid">
-  <div class="row">
-
-    <!--nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse"-->
-      <div class="sidebar-sticky pt-3">
-        <h2 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1">
-          <span>検索結果</span>
-        </h2>
-      </div>
-
-      <!--div class="accordion" id="accordionExample">
-        <div class="card">
-          <div class="card-header" id="headingOne">
-            <h5 class="mb-0">
-              <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                Collapsible Group Item #1
-              </button>
-            </h5>
-          </div>
-          <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
-            <div class="card-body">
-              Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. 3 wolf moon officia aute, non cupidatat skateboard dolor brunch. Food truck quinoa nesciunt laborum eiusmod. Brunch 3 wolf moon tempor, sunt aliqua put a bird on it squid single-origin coffee nulla assumenda shoreditch et. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident. Ad vegan excepteur butcher vice lomo. Leggings occaecat craft beer farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus labore sustainable VHS.
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header" id="headingTwo">
-            <h5 class="mb-0">
-              <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                Collapsible Group Item #2
-              </button>
-            </h5>
-          </div>
-          <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
-            <div class="card-body">
-              Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. 3 wolf moon officia aute, non cupidatat skateboard dolor brunch. Food truck quinoa nesciunt laborum eiusmod. Brunch 3 wolf moon tempor, sunt aliqua put a bird on it squid single-origin coffee nulla assumenda shoreditch et. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident. Ad vegan excepteur butcher vice lomo. Leggings occaecat craft beer farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus labore sustainable VHS.
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header" id="headingThree">
-            <h5 class="mb-0">
-              <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                Collapsible Group Item #3
-              </button>
-            </h5>
-          </div>
-          <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
-            <div class="card-body">
-              Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. 3 wolf moon officia aute, non cupidatat skateboard dolor brunch. Food truck quinoa nesciunt laborum eiusmod. Brunch 3 wolf moon tempor, sunt aliqua put a bird on it squid single-origin coffee nulla assumenda shoreditch et. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident. Ad vegan excepteur butcher vice lomo. Leggings occaecat craft beer farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus labore sustainable VHS.
-            </div>
-          </div>
-        </div>
-      </div-->
-
-    <!--/nav-->
-
-    <!--マップ表示-->
-    <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-md-4">
-      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-         <div class="iframe-container">
-                <div id="map"></div>
-        </div>
-                
-        <!--
-        <h1 class="h2">Dashboard</h1>
-        <div class="btn-toolbar mb-2 mb-md-0">
-          <div class="btn-group mr-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
-          </div>
-          <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
-            <span data-feather="calendar"></span>
-            This week
-          </button>
-        </div>
-      </div>
-
-      <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
-
-      <h2>Section title</h2>
-      <div class="table-responsive">
-        <table class="table table-striped table-sm">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Header</th>
-              <th>Header</th>
-              <th>Header</th>
-              <th>Header</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1,001</td>
-              <td>Lorem</td>
-              <td>ipsum</td>
-              <td>dolor</td>
-              <td>sit</td>
-            </tr>
-            <tr>
-              <td>1,002</td>
-              <td>amet</td>
-              <td>consectetur</td>
-              <td>adipiscing</td>
-              <td>elit</td>
-            </tr>
-            <tr>
-              <td>1,003</td>
-              <td>Integer</td>
-              <td>nec</td>
-              <td>odio</td>
-              <td>Praesent</td>
-            </tr>
-            <tr>
-              <td>1,003</td>
-              <td>libero</td>
-              <td>Sed</td>
-              <td>cursus</td>
-              <td>ante</td>
-            </tr>
-            <tr>
-              <td>1,004</td>
-              <td>dapibus</td>
-              <td>diam</td>
-              <td>Sed</td>
-              <td>nisi</td>
-            </tr>
-            <tr>
-              <td>1,005</td>
-              <td>Nulla</td>
-              <td>quis</td>
-              <td>sem</td>
-              <td>at</td>
-            </tr>
-            <tr>
-              <td>1,006</td>
-              <td>nibh</td>
-              <td>elementum</td>
-              <td>imperdiet</td>
-              <td>Duis</td>
-            </tr>
-            <tr>
-              <td>1,007</td>
-              <td>sagittis</td>
-              <td>ipsum</td>
-              <td>Praesent</td>
-              <td>mauris</td>
-            </tr>
-            <tr>
-              <td>1,008</td>
-              <td>Fusce</td>
-              <td>nec</td>
-              <td>tellus</td>
-              <td>sed</td>
-            </tr>
-            <tr>
-              <td>1,009</td>
-              <td>augue</td>
-              <td>semper</td>
-              <td>porta</td>
-              <td>Mauris</td>
-            </tr>
-            <tr>
-              <td>1,010</td>
-              <td>massa</td>
-              <td>Vestibulum</td>
-              <td>lacinia</td>
-              <td>arcu</td>
-            </tr>
-            <tr>
-              <td>1,011</td>
-              <td>eget</td>
-              <td>nulla</td>
-              <td>Class</td>
-              <td>aptent</td>
-            </tr>
-            <tr>
-              <td>1,012</td>
-              <td>taciti</td>
-              <td>sociosqu</td>
-              <td>ad</td>
-              <td>litora</td>
-            </tr>
-            <tr>
-              <td>1,013</td>
-              <td>torquent</td>
-              <td>per</td>
-              <td>conubia</td>
-              <td>nostra</td>
-            </tr>
-            <tr>
-              <td>1,014</td>
-              <td>per</td>
-              <td>inceptos</td>
-              <td>himenaeos</td>
-              <td>Curabitur</td>
-            </tr>
-            <tr>
-              <td>1,015</td>
-              <td>sodales</td>
-              <td>ligula</td>
-              <td>in</td>
-              <td>libero</td>
-            </tr>
-          </tbody>
-        </table>
-    -->
-      </div>
-    </main>
-  </div>
-</div>
 <script src="main.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jQuery-slimScroll/1.3.8/jquery.slimscroll.min.js"></script>
 <script src="http://maps.google.com/maps/api/js?key=AIzaSyDYBLMRdoFmODvCix_x2d2x4uVkzsszUdA&libraries=places&language=ja&region=JP" type="text/javascript"></script>
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
       <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>

@@ -13,7 +13,7 @@ var language = navigator.language;
 var radius;
 document.addEventListener("DOMContentLoaded", function(){
     //document.getElementById("search").onclick = buttonClickHandler;
-    initMap([38.4874154,140.375671]);
+    initMap([35.681236, 139.767125]);
 }
 )
 

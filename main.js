@@ -1,5 +1,4 @@
 var map;
-var placeList = [];
 var currentPositionMarker;
 var searchedPlaceMarkers = [];
 var searchedPlaceCircles = [];
@@ -21,128 +20,55 @@ function initMap(latLng) {
 
 function buttonClickHandler() {
     //エラーハンドリングも実装する。
-    placeList = [];
-    // 表示しているマーカーを消す
-    for(var i = 0; i<searchedPlaceMarkers.length; i++)
-    {
-        searchedPlaceMarkers[i].setMap(null);
-    }
-    searchedPlaceMarkers = [];
-   
+    clearall();
     var latLngBounds = map.getBounds();
     var keyword = document.getElementById("placeToSearch").value;
-        radius = document.getElementById("raduisToDraw").value * 1000; //ToDo km,m変換に対応する
-    searchPlaces(latLngBounds,keyword)
+    radius = document.getElementById("raduisToDraw").value * 1000; 
+
+    searchPlace(latLngBounds,keyword);
 }
 
-function searchPlaces(latLngBounds, keyword,language) {
-    var requst = 
-    {
-        bounds: latLngBounds,
-        query: keyword,
-        language: language
-        //radius: '50000'
+
+let searchPlace = (latLngBounds,keyword) => {
+    let requst = {
+        bounds : latLngBounds,
+        query : keyword
     };
-    service = new google.maps.places.PlacesService(map);
-    service.textSearch(requst, callback)
-}
-
-function callback(results, status, pagination)
-{
-    if(status == google.maps.places.PlacesServiceStatus.OK)
-    {
-        for(var i=0; i<results.length; i++)
-        {
-            var info = {
-                name: results[i].name,                          // 店名
-                location: results[i].geometry.location,         // 座標
-                formatted_address: results[i].formatted_address,//可読な住所
-                vicinity: results[i].vicinity,                  // 住所(simplified address for the place)
-                address_component: results[i].address_component,  // 住所の構成要素の配列(?)
-                adr_address: results[i].adr_address,            //短縮した住所(?)
-            };
-            placeList.push(info);
-        }
-        if(pagination.hasNextPage)
-        {
-            pagination.nextPage();
-        }
-        else
-        {
-            //OutputResults();
-            initListOfTasks();
-        }
-    }
-    else
-    {
-        placeList = [];
-        //OutputResults();
-    }
-}
-
-function OutputResults()
-{
-    var table = document.getElementById("results");
-    while(table.firstChild)
-    {
-        table.removeChild(table.firstChild);
-    }
-
-    for(var i=0; i<placeList.length; i++)
-    {
-        var tr = document.createElement("tr");
-        for(var j=0; j<3; j++)
-        {
-            var td = document.createElement("td");
-            if(j==0)
-            {
-                var aTag = document.createElement("a");
-                aTag.href = "javascript:void(0);";
-                aTag.textContent = placeList[i].name;
-                aTag.id = i;
-                aTag.onclick = linkHandler;
-                td.appendChild(aTag);
+    let results = []
+    service = new google.maps.places.PlacesService(map)
+    service.textSearch(requst,(result,status,pagination)=>{
+        if(status == google.maps.places.PlacesServiceStatus.OK){
+            result.forEach(element => results.push(element));
+            //検索結果の読み込みが継続する場合
+            if(pagination.hasNextPage){
+                pagination.nextPage();
             }
-            else if(j==1)
-            {
-                td.textContent = placeList[i].rating;
+            else{
+            //読み込み完了後の処理
+            displayResult(results);
             }
-            else if(j==2)
-            {
-                td.textContent = placeList[i].vicinity;
-            }
-            tr.appendChild(td);
         }
-        table.appendChild(tr);
-    }
+    });
 }
 
 
-function linkHandler(event)
-{
-    var shop = placeList[event.target.id];
-    var option = {
-        position: shop.location,
-        title: shop.name
-    };
+//検索結果の表示
+let displayResult = (results) => {
+    results.forEach(element => {
+        addMarkerPlaces(map,element);
+        addCercleAroundPlaces(map,element,radius);
+    });
+}
 
-    // 表示しているマーカーを消す
-    for(var i = 0; i<searchedPlaceMarkers.length; i++)
-    {
-        searchedPlaceMarkers[i].setMap(null);
-    }
+//マーカーと円のクリア
+let clearall = () => {
+    // 表示しているマーカーの初期化
+    searchedPlaceMarkers.forEach(element => element.setMap(null));
     searchedPlaceMarkers = [];
 
-    var contentStr = "<h1><a href=\"https://www.google.com/search?q=" + shop.name + "\" target=\"_blank\">" + shop.name + "</a></h1><div>評価：" + shop.rating + "</div><div>" + shop.vicinity + "</div>";
-    var infoWindow = new google.maps.InfoWindow({
-        content: contentStr
-    });
-    var marker = new google.maps.Marker(option);
-    marker.addListener("click", function(){
-        infoWindow.open(map, marker);
-    })
-    marker.setMap(map);
-    searchedPlaceMarkers.push(marker);
+    //表示している円の初期化
+    searchedPlaceCircles.forEach(element => element.setMap(null));
+    searchedPlaceCircles = [];
 }
 
 
@@ -192,36 +118,11 @@ function handleLocationError(browserHasGeolocation, infoWindow, pos)
 }
 
 
-//検索結果よりカードを生成
-let cardContainer;
 
-let createTaskCard = (element) => {
-
-let card = document.createElement('div');
-card.className = 'card shadow cursor-pointer';
-
-let cardBody = document.createElement('div');
-cardBody.className = 'card-body';
-
-let title = document.createElement('h5');
-title.innerText = element.name;
-title.className = 'card-title';
-
-let color = document.createElement('div');
-color.innerText = element.formatted_address;
-color.className = 'card-color';
-
-cardBody.appendChild(title);
-cardBody.appendChild(color);
-card.appendChild(cardBody);
-cardContainer.appendChild(card);
-
-}
-
-let addMarkerPlaces = (element) => {
+let addMarkerPlaces = (map,element) => {
     var marker = new MarkerWithLabel({
         map: map,
-        position: element.location,
+        position: element.geometry.location,
         icon: {
             url:'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
             scaledSize : new google.maps.Size(32, 32)
@@ -235,27 +136,11 @@ let addMarkerPlaces = (element) => {
     searchedPlaceMarkers.push(marker)
 }
 
-let addCercleAroundPlaces = (element) => {
+let addCercleAroundPlaces = (map,element,radius) => {
     var circle = new google.maps.Circle({
         map: map,
-        center: element.location,
+        center: element.geometry.location,
         radius : radius
     });
     searchedPlaceCircles.push(circle)
 }
-
-
-
-let initListOfTasks = () => {
-if (cardContainer) {
-    document.getElementById('card-container').replaceWith(cardContainer);
-    return;
-}
-
-cardContainer = document.getElementById('card-container');
-placeList.forEach((element) => {
-    createTaskCard(element);
-    addMarkerPlaces(element);
-    addCercleAroundPlaces(element);
-});
-};

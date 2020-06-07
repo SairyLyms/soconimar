@@ -1,3 +1,10 @@
+$(window).resize(function () {
+    var h = $(window).height(),
+      offsetTop = 125; // Calculate the top offset
+  
+    $('#mapCanvas').css('height', (h - offsetTop));
+  }).resize();
+
 var map;
 var currentPositionMarker;
 var searchedPlaceMarkers = [];
@@ -12,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
 function initMap(latLng) {
     var latLng = {lat: latLng[0], lng: latLng[1]};
-    map = new google.maps.Map(document.getElementById("map"), {
+    map = new google.maps.Map(document.getElementById("mapCanvas"), {
         zoom: 13,
         center: latLng
     });

@@ -56,3 +56,13 @@ a, a:hover { color: #1450A8;}
 .filter-red { background-color: #CC2537; }
 .filter-orange { background-color: #CD8518; }
 .filter-grey { background-color: #7B7B7B; }
+
+
+.mapLabels {
+  color: #ffffff;
+  background: #000000;
+  font-size: 12px;
+  text-align: center;
+  padding: 2px 10px;
+  border-radius: 8px;
+}

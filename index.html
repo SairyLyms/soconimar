@@ -36,11 +36,16 @@
     <!--script src='lib/turf.min.js'></script-->
     <script src="https://maps.google.com/maps/api/js?libraries=places&key=AIzaSyDYBLMRdoFmODvCix_x2d2x4uVkzsszUdA&language=ja&region=JP"></script>
     <script src="lib/Leaflet.GoogleMutant.js" ></script>
+    <script src="markerwithlabel.js"></script> 
     <!--script src="lib/leaflet-color-markers.js" ></script-->
     
     <!-- Custom JavaScript -->
     <script src="js/searchable_map_lib.js"></script>
     <!--script src="js/analytics_lib.js"></script-->
+
+    <!-- ColorPicker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/> <!-- 'nano' theme -->
+    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
 
   </head>
   <body>
@@ -58,9 +63,9 @@
           <li class='nav-item'>
             <a class="nav-link active" href="/"><i class="fa fa-map-marker" aria-hidden="true"></i> Map</a>
           </li>
-          <li class='nav-item'>
+          <!--li class='nav-item'>
             <a class="nav-link" href="./about.html"><i class="fa fa-info-circle" aria-hidden="true"></i> About</a>
-          </li>
+          </li-->
         </ul>
       </div>
     </nav>
@@ -69,7 +74,7 @@
 
       <div class='row'>
         <div class="col-md-4">
-          <p>Google マップの検索結果に、指定した半径の円を描きます。 <br /><a href='./about.html'>詳しくはこちら &raquo;</a></p>
+          <!--p>Google マップの検索結果に、指定した半径の円を描きます。 <br /><a href='./about.html'>詳しくはこちら &raquo;</a></p-->
 
           <div class="card bg-light">
             <div class="card-body">
@@ -79,28 +84,21 @@
                   中心地点
                   <div class="input-group">
                     <div class="input-group-prepend">
-                      <button class="btn btn-success" type="button" id="btnCurrentPositionn"><i class='fa fa-compass'></i> 現在地を取得</button>
+                      <button class="btn btn-success" type="button" id="btnCurrentPosition" onclick="getCurrentPosition()"><i class='fa fa-compass'></i> 現在地</button>
                     </div>
-                    <input type="text" class="form-control" placeholder="" aria-label="" aria-describedby="basic-addon1">
+                    <input type="text" class="form-control" id="placeToCenter" placeholder="" aria-label="" aria-describedby="basic-addon1">
+                    <div class="input-group-append">
+                      <button class="btn btn-primary" type="button" id="btnCenterPosition" onclick="setCenterPlace()">設定</button>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div class='row'>
-                <div class="col-md-8">
+                <div class="col-md-12">
                   検索ワード(施設のジャンル、名称)
                   <div class="form-group">
                       <input class='form-control' id='placeToSearch' placeholder='例:市役所、イオンモール' type='text'>
-                  </div>
-                </div>
-
-                <div class="col-md-4">
-                  円の半径
-                  <div class='input-group md-2'>
-                      <input class='form-control' id='raduisToDraw' placeholder='1.0' type='number' value="1.0" min="0.0" step="0.1">
-                      <div class="input-group-append">
-                        <div class="input-group-text">km</div>
-                      </div>
                   </div>
                 </div>
               </div>
@@ -113,9 +111,24 @@
                   </div>
                 </div>
               </div-->
+              <div class='row'>
+                <div class="col-md-4">
+                  円の半径
+                  <div class='input-group md-2'>
+                      <input class='form-control' id='raduisToDraw' placeholder='1.0' type='number' value="1.0" min="0.0" step="0.1">
+                      <div class="input-group-append">
+                        <div class="input-group-text">km</div>
+                      </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                円の色
+                <div class="color-picker"></div>
+                </div>
+              </div>
               <div class="btn-group pull-right">
-                <button class='btn btn-primary' id="btnSearch"><i class='fa fa-circle-thin'></i><i class='fa fa-pencil'></i> 円を描く</button>
-                <button class='btn btn-secondary' id="btnReset" title="Reset"><i class="fa fa-eraser" aria-hidden="true"></i> リセット</button>
+                <button class='btn btn-primary' id="btnDraw" onclick="buttonClickHandler()"><i class='fa fa-circle-thin'></i><i class='fa fa-pencil'></i> 円を描く</button>
+                <button class='btn btn-secondary' id="btnReset" title="Reset"onclick="clearall()"><i class="fa fa-eraser" aria-hidden="true"></i> 円を消す</button>
               </div>
               <!--button class='btn btn-dark' id='btnViewMode' title='Change view'><i class='fa fa-list'></i> List view</button-->
 

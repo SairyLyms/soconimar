@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"liveServer.settings.https": {
+			"enable": true,
+			"cert": "/Users/ryuma/localhost+2.pem",
+			"key": "/Users/ryuma/localhost+2-key.pem",
+			"passphrase": ""
+		}
+	}
+}

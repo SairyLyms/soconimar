@@ -17,6 +17,7 @@ var radius;
 var genre1Set = new Set()
 var genre2Set = new Set() 
 var genre3Set = new Set()
+var genreQuery = ""
 
 
 
@@ -48,7 +49,7 @@ let getGenreObject = async () => {
         genreObject =  json;
      });
 
-     //genreObject.unshift({"業種コード1":"00","業種コード2":"0000","業種コード3":"0000000","業種名1":"未選択","業種名2":"未選択","業種名3":"未選択"})
+    genreObject.unshift({"業種コード1":"","業種コード2":"","業種コード3":"","業種名1":"未選択","業種名2":"未選択","業種名3":"未選択"})
 
      genreObject.forEach(el => {
          genre1Set[el["業種コード1"]] = el["業種名1"]
@@ -67,108 +68,63 @@ var repalceOptions = (elementId,newOptions) => {
         $(elementId).append($("<option></option>")
        .attr("value", value).text(key));
     });}
-/*
-(function($, window) {
-    $.fn.replaceOptions = function(options) {
-      var self, $option;
-  
-      this.empty();
-      self = this;
-  
-      $.each(options, function(index, option) {
-        $option = $("<option></option>")
-          .attr("value", option.value)
-          .text(option.text);
-        self.append($option);
-      });
-    };
-  })(jQuery, window);
-*/
 
 
 //業種が変更された場合の動作
 $("#genre1Selector, #genre2Selector, #genre3Selector").change( event => {
-    var value = event.currentTarget.value;
-    var gc1 = 0 ,gc2 = 0, gc3 = 0
-    //業種(中分類・小分類)の範囲をフィルタする
-    var gcOptionSet1 = new Set()//genre1Set[null]
-    var gcOptionSet2 = new Set()//genre2Set[null]
-    var gcOptionSet3 = new Set()//genre3Set[null]    
-
-    genreObject.forEach(el => {
-    if(el["業種コード1"] == value.slice(0,2)){
-        gcOptionSet2[el["業種コード2"]] = el["業種名2"];
-        gcOptionSet3[el["業種コード3"]] = el["業種名3"];
+    let value = event.currentTarget.value;
+    if(event.target.id == "genre1Selector"){
+        //大分類が選択された場合
+        let genre2Options = Object.keys(genre2Set).reduce((a,key) => {if(key.slice(0,2) == value || key == ""){a[key] = genre2Set[key]}return a},{})
+        let genre3Options = Object.keys(genre3Set).reduce((a,key) => {if(key.slice(0,2) == value || key == ""){a[key] = genre3Set[key]}return a},{})
+        repalceOptions("#genre2Selector",genre2Options);repalceOptions("#genre3Selector",genre3Options);
     }
-    else{
-        delete gcOptionSet2[el["業種コード2"]] 
+    else if(event.target.id == "genre2Selector"){
+        //中分類が選択された場合
+        let genre3Options = Object.keys(genre3Set).reduce((a,key) => {if(key.slice(0,4) == value || key == ""){a[key] = genre3Set[key]}return a},{})
+        repalceOptions("#genre3Selector",genre3Options);
     }
-    if(el["業種コード2"] == value.slice(0,4)){
-        gcOptionSet3[el["業種コード3"]] = el["業種名3"]
-    }
-    else if(value.length == 4 || value.length == 7){
-        delete gcOptionSet3[el["業種コード3"]]
-    }
-   })
-
-/*
-    genreObject.reduce((a,v)=>{
-        if(v["業種コード1"] == value.slice(0,2) ||  v["業種コード2"] == value.slice(0,4) || v["業種コード3"] == value.slice(0,7)){
-            a.push(v)
-            gcOptionSet1[v["業種コード1"]] = v["業種名1"] 
-            gcOptionSet2[v["業種コード2"]] = v["業種名2"]  
-            gcOptionSet3[v["業種コード3"]] = v["業種名3"]
-        }
-        return a
-    },[]);
-*/
-    switch(event.currentTarget.id){
-        case "genre1Selector" :  repalceOptions("#genre2Selector",gcOptionSet2);repalceOptions("#genre3Selector",gcOptionSet3); break; 
-        case "genre2Selector" :  $("#genre1Selector").val(value.slice(0,2));repalceOptions("#genre2Selector",gcOptionSet2);$("#genre2Selector").val(value);repalceOptions("#genre3Selector",gcOptionSet3); break;
-        case "genre3Selector" :  $("#genre1Selector").val(value.slice(0,2));repalceOptions("#genre2Selector",gcOptionSet2);$("#genre2Selector").val(value.slice(0,4));repalceOptions("#genre3Selector",gcOptionSet3);$("#genre3Selector").val(value); break;
-        default : break;
-     }
-    //repalceOptions("#genre1Selector",gcOptionSet1);
-    //repalceOptions("#genre2Selector",gcOptionSet2);
-    //repalceOptions("#genre3Selector",gcOptionSet3);
-    //$('#genre2Selector option').replaceWith(repalceOptions(Object.keys(genre2Set).filter(el => el.slice(0,2) == value)))
-    //$('#genre2Selector option').replaceWith(genre2Options.filter((index,option) => option.value.slice(0,2) == value))
-    //$('#genre3Selector option').replaceWith(genre3Options.filter((index,option) => option.value.slice(0,2) == value))
+    genreQuery = value;
 })
-
-
-//一意なオブジェクト配列の抽出
-//var uniqueObjectArray = a => [...new Set(a.map(o => JSON.stringify(o)))].map(s => JSON.parse(s)) 
 
     
 let searchAndDraw = async () => {
 
     var query = document.getElementById("placeToSearch").value;
     var dist = 20;
+    var url = new URL("https://map.yahooapis.jp/search/local/V1/localSearch");
+    url.search = new URLSearchParams({
+        appid : "dj00aiZpPTJ1czdha250dHdvTSZzPWNvbnN1bWVyc2VjcmV0Jng9Yjg-",
+        sort : "dist",
+        results : 100,
+        output : "json",
+        query : query,
+        lat : map.getCenter().lat,
+        lon : map.getCenter().lng,
+        dist : dist,
+        gc : genreQuery,
+        start : 1
+    });
 
+    //業種検索のテスト
+    //https://map.yahooapis.jp/search/local/V1/localSearch?appid=dj00aiZpPTJ1czdha250dHdvTSZzPWNvbnN1bWVyc2VjcmV0Jng9Yjg-&gc=413001&lat=38.4769442&lon=140.3838833
+    "https://map.yahooapis.jp/search/local/V1/localSearch?appid=dj00aiZpPTJ1czdha250dHdvTSZzPWNvbnN1bWVyc2VjcmV0Jng9Yjg-&sort=dist&results=100&output=json&query=&lat=38.4769442&lon=140.3838833&dist=20&gc=&start=1"
     var result;
     try {
-        var url = new URL("https://map.yahooapis.jp/search/local/V1/localSearch");
-        url.search = new URLSearchParams({
-            appid : "dj00aiZpPTJ1czdha250dHdvTSZzPWNvbnN1bWVyc2VjcmV0Jng9Yjg-",
-            sort : "dist",
-            results : "100",
-            output : "json",
-            query : query,
-            lat : map.getCenter().lat,
-            lon : map.getCenter().lng,
-            dist: dist
-        });
-
-        //業種検索のテスト
-        //https://map.yahooapis.jp/search/local/V1/localSearch?appid=dj00aiZpPTJ1czdha250dHdvTSZzPWNvbnN1bWVyc2VjcmV0Jng9Yjg-&gc=413001&lat=38.4769442&lon=140.3838833
-
+        //console.log(url) 
+        result = await getEntireResultsList(url);
+/*
         await fetch(url)
-        .then(response => { return response.json(); })
+        .then(response => response.json())
         .then(json => {
             console.log(json);
+            
+            var searchParam = new URLSearchParams(url.search);
+            console.log(searchParam)
             result = json["Feature"];
-        })}
+        })
+*/
+    }
     catch(err){console.log("something went wrong: " + err.message)}
 
     //重複要素(Gidが重複する要素)の削除
@@ -180,7 +136,7 @@ let searchAndDraw = async () => {
         }
     });
     result = buf;
-
+    console.log(result)
    //検索結果の表示
    result.forEach(item => {
     let lng = parseFloat(item.Geometry.Coordinates.split(",")[0]);
@@ -217,6 +173,33 @@ let searchAndDraw = async () => {
     });
     placeDataList
 }
+
+const getResults = async function(url,pageNo = 1) {
+    console.log(url)
+    var searchParam = new URLSearchParams(url.search)
+    console.log(searchParam.toString())
+    searchParam.set("start",pageNo);
+    url.search = searchParam; 
+    console.log(url)
+    var apiResults = await fetch(url)
+        .then(resp => resp.json());
+    return apiResults;
+}
+
+const getEntireResultsList = async function(url,pageNo = 1) {
+  var searchParam = new URLSearchParams(url.search)
+  const apiResults = await getResults(url,pageNo);
+  const results = apiResults["Feature"]
+  //console.log("Retreiving data from API for page : " + pageNo);
+  
+  if (apiResults.ResultInfo.Count >= parseInt(searchParam.get("results"))) {
+    //console.log(results)
+    return results.concat(await getEntireResultsList(url,pageNo+1*parseInt(searchParam.get("results"))));
+  } else {
+    //console.log(results)
+    return results;
+  }
+};
 
 let clearAll = () => {
     placeDataList.forEach(element => {

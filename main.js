@@ -113,17 +113,6 @@ let searchAndDraw = async () => {
     try {
         //console.log(url) 
         result = await getEntireResultsList(url);
-/*
-        await fetch(url)
-        .then(response => response.json())
-        .then(json => {
-            console.log(json);
-            
-            var searchParam = new URLSearchParams(url.search);
-            console.log(searchParam)
-            result = json["Feature"];
-        })
-*/
     }
     catch(err){console.log("something went wrong: " + err.message)}
 
@@ -181,7 +170,7 @@ const getResults = async function(url,pageNo = 1) {
     searchParam.set("start",pageNo);
     url.search = searchParam; 
     console.log(url)
-    var apiResults = await fetch(url)
+    var apiResults = await fetch((url),{ mode: 'cors',credentials: 'include'})
         .then(resp => resp.json());
     return apiResults;
 }

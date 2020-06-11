@@ -170,7 +170,7 @@ const getResults = async function(url,pageNo = 1) {
     searchParam.set("start",pageNo);
     url.search = searchParam; 
     console.log(url)
-    var apiResults = await fetch((url),{ mode: 'cors',credentials: 'include'})
+    var apiResults = await fetch((url),{ mode: 'same-origin',credentials: 'include'})
         .then(resp => resp.json());
     return apiResults;
 }

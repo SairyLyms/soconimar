@@ -90,7 +90,27 @@
 
               <div class='row'>
                 <div class="col-md-12">
-                  中心地点
+                  <h3>ワード検索(施設のジャンル、名称)</h3>
+                  <div class="form-group">
+                      <input class='form-control' id='placeToSearch' placeholder='例:セブンイレブン' type='text'>
+                  </div>
+                </div>
+              </div>
+
+              <div class='row'>
+                <div class="col-md-12">
+                  <h3>業種検索(施設のジャンル、名称)</h3>
+                  <div class="form-group">
+                    <div class='row'><div class="col-md-4">業種(大分類)</div><div class="col-md-8"><select class='form-control' id='genre1Selector'><option value="0" disabled selected>選択してくだい</option></select></div></div>
+                    <div class='row'><div class="col-md-4">業種(中分類)</div><div class="col-md-8"><select class='form-control' id='genre2Selector'><option value="0" disabled selected>選択してくだい</option></select></div></div>
+                    <div class='row'><div class="col-md-4">業種(小分類)</div><div class="col-md-8"><select class='form-control' id='genre3Selector'><option value="0" disabled selected>選択してくだい</option></select></div></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class='row'>
+                <div class="col-md-12">
+                  <h3>中心地点</h3>
                   <div class="input-group">
                     <div class="input-group-prepend">
                       <button class="btn btn-success" type="button" id="btnCurrentPosition" onclick="getCurrentPosition()"><i class='fa fa-compass'></i> 現在地</button>
@@ -99,15 +119,6 @@
                     <div class="input-group-append">
                       <button class="btn btn-primary" type="button" id="btnCenterPosition" onclick="setCenterPlace()">設定</button>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class='row'>
-                <div class="col-md-12">
-                  検索ワード(施設のジャンル、名称)
-                  <div class="form-group">
-                      <input class='form-control' id='placeToSearch' placeholder='例:市役所、イオンモール' type='text'>
                   </div>
                 </div>
               </div>
@@ -122,7 +133,7 @@
               </div-->
               <div class='row'>
                 <div class="col-md-4">
-                  円の半径
+                  <h3>円の半径</h3>
                   <div class='input-group md-2'>
                       <input class='form-control' id='raduisToDraw' placeholder='1.0' type='number' value="1.0" min="0.0" step="0.1">
                       <div class="input-group-append">
@@ -131,7 +142,7 @@
                   </div>
                 </div>
                 <div class="col-md-4">
-                円の色
+                <h3>円の色</h3>
                 <div class="color-picker"></div>
                 </div>
               </div>

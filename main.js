@@ -8,11 +8,17 @@ $(window).resize(function () {
 
 var map;
 var currentPositionMarker;
+var genreObject ={}
 var placeDataList = [];
 var Markers = [];
 var Circles = [];
 var language = navigator.language;
 var radius;
+var genre1Set = new Set()
+var genre2Set = new Set() 
+var genre3Set = new Set()
+
+
 
 document.addEventListener("DOMContentLoaded", function(){
     //document.getElementById("search").onclick = buttonClickHandler;
@@ -32,15 +38,109 @@ let init = () => {
         localIdeographFontFamily: false
         });
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    map.addControl(new mapboxgl.ScaleControl() );
-
-
-    $.getJSON("genre.json",function(json) {
-        console.log(json); // this will show the info it in firebug console
-    });
+    map.addControl(new mapboxgl.ScaleControl());
+    getGenreObject();
 
 } 
 
+let getGenreObject = async () => {
+    await $.getJSON("genre.json",function(json) {
+        genreObject =  json;
+     });
+
+     //genreObject.unshift({"業種コード1":"00","業種コード2":"0000","業種コード3":"0000000","業種名1":"未選択","業種名2":"未選択","業種名3":"未選択"})
+
+     genreObject.forEach(el => {
+         genre1Set[el["業種コード1"]] = el["業種名1"]
+         genre2Set[el["業種コード2"]] = el["業種名2"]
+         genre3Set[el["業種コード3"]] = el["業種名3"] 
+        }) 
+
+     repalceOptions("#genre1Selector",genre1Set);
+     repalceOptions("#genre2Selector",genre2Set);
+     repalceOptions("#genre3Selector",genre3Set); 
+}
+
+var repalceOptions = (elementId,newOptions) => {
+    $(elementId).empty(); // remove old options
+    $.each(newOptions,(value,key) => {
+        $(elementId).append($("<option></option>")
+       .attr("value", value).text(key));
+    });}
+/*
+(function($, window) {
+    $.fn.replaceOptions = function(options) {
+      var self, $option;
+  
+      this.empty();
+      self = this;
+  
+      $.each(options, function(index, option) {
+        $option = $("<option></option>")
+          .attr("value", option.value)
+          .text(option.text);
+        self.append($option);
+      });
+    };
+  })(jQuery, window);
+*/
+
+
+//業種が変更された場合の動作
+$("#genre1Selector, #genre2Selector, #genre3Selector").change( event => {
+    var value = event.currentTarget.value;
+    var gc1 = 0 ,gc2 = 0, gc3 = 0
+    //業種(中分類・小分類)の範囲をフィルタする
+    var gcOptionSet1 = new Set()//genre1Set[null]
+    var gcOptionSet2 = new Set()//genre2Set[null]
+    var gcOptionSet3 = new Set()//genre3Set[null]    
+
+    genreObject.forEach(el => {
+    if(el["業種コード1"] == value.slice(0,2)){
+        gcOptionSet2[el["業種コード2"]] = el["業種名2"];
+        gcOptionSet3[el["業種コード3"]] = el["業種名3"];
+    }
+    else{
+        delete gcOptionSet2[el["業種コード2"]] 
+    }
+    if(el["業種コード2"] == value.slice(0,4)){
+        gcOptionSet3[el["業種コード3"]] = el["業種名3"]
+    }
+    else if(value.length == 4 || value.length == 7){
+        delete gcOptionSet3[el["業種コード3"]]
+    }
+   })
+
+/*
+    genreObject.reduce((a,v)=>{
+        if(v["業種コード1"] == value.slice(0,2) ||  v["業種コード2"] == value.slice(0,4) || v["業種コード3"] == value.slice(0,7)){
+            a.push(v)
+            gcOptionSet1[v["業種コード1"]] = v["業種名1"] 
+            gcOptionSet2[v["業種コード2"]] = v["業種名2"]  
+            gcOptionSet3[v["業種コード3"]] = v["業種名3"]
+        }
+        return a
+    },[]);
+*/
+    switch(event.currentTarget.id){
+        case "genre1Selector" :  repalceOptions("#genre2Selector",gcOptionSet2);repalceOptions("#genre3Selector",gcOptionSet3); break; 
+        case "genre2Selector" :  $("#genre1Selector").val(value.slice(0,2));repalceOptions("#genre2Selector",gcOptionSet2);$("#genre2Selector").val(value);repalceOptions("#genre3Selector",gcOptionSet3); break;
+        case "genre3Selector" :  $("#genre1Selector").val(value.slice(0,2));repalceOptions("#genre2Selector",gcOptionSet2);$("#genre2Selector").val(value.slice(0,4));repalceOptions("#genre3Selector",gcOptionSet3);$("#genre3Selector").val(value); break;
+        default : break;
+     }
+    //repalceOptions("#genre1Selector",gcOptionSet1);
+    //repalceOptions("#genre2Selector",gcOptionSet2);
+    //repalceOptions("#genre3Selector",gcOptionSet3);
+    //$('#genre2Selector option').replaceWith(repalceOptions(Object.keys(genre2Set).filter(el => el.slice(0,2) == value)))
+    //$('#genre2Selector option').replaceWith(genre2Options.filter((index,option) => option.value.slice(0,2) == value))
+    //$('#genre3Selector option').replaceWith(genre3Options.filter((index,option) => option.value.slice(0,2) == value))
+})
+
+
+//一意なオブジェクト配列の抽出
+//var uniqueObjectArray = a => [...new Set(a.map(o => JSON.stringify(o)))].map(s => JSON.parse(s)) 
+
+    
 let searchAndDraw = async () => {
 
     var query = document.getElementById("placeToSearch").value;
@@ -127,25 +227,6 @@ let clearAll = () => {
     placeDataList = [];
 }
 
-
-
-function initMap(latLng) {
-    var latLng = {lat: latLng[0], lng: latLng[1]};
-    map = new google.maps.Map(document.getElementById("mapCanvas"), {
-        zoom: 13,
-        center: latLng
-    });
-}
-
-function buttonClickHandler() {
-    //Todo:エラーハンドリングも実装する。
-    var latLngBounds = map.getBounds();
-    var keyword = document.getElementById("placeToSearch").value;
-    radius = document.getElementById("raduisToDraw").value * 1000; 
-
-    searchPlace(latLngBounds,keyword);
-}
-
 //中心地点の設定
 let setCenterPlace = () => {
     let keyword = document.getElementById("placeToCenter").value;
@@ -185,30 +266,6 @@ let searchPlace = (latLngBounds,keyword) => {
             }
         }
     });
-}
-
-
-//検索結果の表示
-let displayResult = (results) => {
-    results.forEach(element => {
-        addMarkerPlaces(map,element);
-        addCercleAroundPlaces(map,element,radius);
-    });
-}
-
-//マーカーと円のクリア
-let clearall = () => {
-
-    currentPositionMarker.setMap(null);
-    currentPositionMarker = null;
-
-    // 表示しているマーカーの初期化
-    searchedPlaceMarkers.forEach(element => element.setMap(null));
-    searchedPlaceMarkers = [];
-
-    //表示している円の初期化
-    searchedPlaceCircles.forEach(element => element.setMap(null));
-    searchedPlaceCircles = [];
 }
 
 
@@ -261,36 +318,6 @@ let moveCenterPosition = (pos) => {
     });
 }
 
-let addMarkerPlaces = (map,element) => {
-    var marker = new MarkerWithLabel({
-        map: map,
-        position: element.geometry.location,
-        icon: {
-            url:'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
-            scaledSize : new google.maps.Size(32, 32)
-        },
-        labelContent: element.name,                    //ラベル文字
-        labelAnchor: new google.maps.Point(-10, 25),   //ラベル文字の基点
-        labelClass: 'mapLabels',                       //CSSのクラス名
-        labelStyle: {opacity: 0.8},                    //透過度
-        animation: google.maps.Animation.DROP,
-    });
-    searchedPlaceMarkers.push(marker)
-}
-
-let addCercleAroundPlaces = (map,element,radius) => {
-    var circle = new google.maps.Circle({
-        map: map,
-        center: element.geometry.location,
-        radius : radius,
-        strokeColor : pickr.getColor().toHEXA().toString(),
-        strokeOpacity: 0.8,
-        fillColor : pickr.getColor().toHEXA().toString(),
-        fillOpacity: 0.35
-    });
-    searchedPlaceCircles.push(circle)
-}
-
 //カラーピッカー
 // Simple example, see optional options for more configuration.
 const pickr = Pickr.create({
@@ -340,194 +367,3 @@ const pickr = Pickr.create({
 
 
 
-
-
-
-//var baseLayers = {"地理院タイル（標準地図）": std,"地理院タイル（オルソ）": ort,"地理院タイル（白地図）": blank};
-var baseLayers ={};
-//var overlays = {'地図情報（注記）': annolayer,'地図情報（道路中心線）': rdcllayer,'地図情報（鉄道中心線）': raillayer,'地図情報（河川中心線）': rvrcllayer,'基盤地図情報_基本項目': fgdlayer,'基盤地図情報_数値標高モデル（10m）': dem10blayer,'基盤地図情報_数値標高モデル（5m）': dem5alayer,'地形分類（自然地形）': landformclassification1layer,'地形分類（人工地形）': landformclassification2layer,'地名情報（居住地名）': nrptlayer,'地名情報（自然地名）': nnfptlayer,'地名情報（公共施設）': pfptlayer,'地名情報（住居表示住所）': jhjlayer,"地理院タイル（標準地図）": std,"地理院タイル（オルソ）": ort,"地理院タイル（白地図）": blank};
-
-
-
-var vectorTileStyling = {
-
-    water: {
-        fill: false,
-        weight: 1,
-        fillColor: '#06cccc',
-        color: '#06cccc',
-        fillOpacity: 0.2,
-        opacity: 0.4,
-    },
-    admin: {
-        weight: 1,
-        fillColor: 'pink',
-        color: 'pink',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-    waterway: {
-        weight: 1,
-        fillColor: '#2375e0',
-        color: '#2375e0',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-    landcover: {
-        fill: false,
-        weight: 1,
-        fillColor: '#53e033',
-        color: '#53e033',
-        fillOpacity: 0.2,
-        opacity: 0.4,
-    },
-    landuse: {
-        fill: false,
-        weight: 1,
-        fillColor: '#e5b404',
-        color: '#e5b404',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-    park: {
-        fill: false,
-        weight: 1,
-        fillColor: '#84ea5b',
-        color: '#84ea5b',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-    boundary: {
-        weight: 1,
-        fillColor: '#c545d3',
-        color: '#c545d3',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-    aeroway: {
-        weight: 1,
-        fillColor: '#51aeb5',
-        color: '#51aeb5',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-    road: {	// mapbox & nextzen only
-        weight: 1,
-        fillColor: '#f2b648',
-        color: '#f2b648',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-    tunnel: {	// mapbox only
-        weight: 0.5,
-        fillColor: '#f2b648',
-        color: '#f2b648',
-        fillOpacity: 0.2,
-        opacity: 0.4,
-// 					dashArray: [4, 4]
-    },
-    bridge: {	// mapbox only
-        weight: 0.5,
-        fillColor: '#f2b648',
-        color: '#f2b648',
-        fillOpacity: 0.2,
-        opacity: 0.4,
-// 					dashArray: [4, 4]
-    },
-    transportation: {	// openmaptiles only
-        weight: 0.5,
-        fillColor: '#f2b648',
-        color: '#f2b648',
-        fillOpacity: 0.2,
-        opacity: 0.4,
-// 					dashArray: [4, 4]
-    },
-    transit: {	// nextzen only
-        weight: 0.5,
-        fillColor: '#f2b648',
-        color: '#f2b648',
-        fillOpacity: 0.2,
-        opacity: 0.4,
-// 					dashArray: [4, 4]
-    },
-    building: {
-        fill: false,
-        weight: 1,
-        fillColor: '#2b2b2b',
-        color: '#2b2b2b',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-    water_name: {
-        weight: 1,
-        fillColor: '#022c5b',
-        color: '#022c5b',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-    transportation_name: {
-        weight: 1,
-        fillColor: '#bc6b38',
-        color: '#bc6b38',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-    place: {
-        weight: 1,
-        fillColor: '#f20e93',
-        color: '#f20e93',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-    housenumber: {
-        weight: 1,
-        fillColor: '#ef4c8b',
-        color: '#ef4c8b',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-    poi: {
-        weight: 1,
-        fillColor: '#3bb50a',
-        color: '#3bb50a',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-    earth: {	// nextzen only
-        fill: false,
-        weight: 1,
-        fillColor: '#c0c0c0',
-        color: '#c0c0c0',
-        fillOpacity: 0.2,
-        opacity: 0.4
-    },
-
-
-    // Do not symbolize some stuff for mapbox
-    country_label: [],
-    marine_label: [],
-    state_label: [],
-    place_label: [],
-    waterway_label: [],
-    poi_label: [],
-    road_label: [],
-    housenum_label: [],
-
-
-    // Do not symbolize some stuff for openmaptiles
-    country_name: [],
-    marine_name: [],
-    state_name: [],
-    place_name: [],
-    waterway_name: [],
-    poi_name: [],
-    road_name: [],
-    housenum_name: [],
-};
-    // Monkey-patch some properties for nextzen layer names, because
-    // instead of "building" the data layer is called "buildings" and so on
-    vectorTileStyling.buildings  = vectorTileStyling.building;
-    vectorTileStyling.boundaries = vectorTileStyling.boundary;
-    vectorTileStyling.places     = vectorTileStyling.place;
-    vectorTileStyling.pois       = vectorTileStyling.poi;
-    vectorTileStyling.roads      = vectorTileStyling.road;

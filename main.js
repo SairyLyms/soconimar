@@ -92,9 +92,11 @@ let searchAndDraw = async () => {
 
     var query = document.getElementById("placeToSearch").value;
     var dist = 20;
-    var url = new URL("https://map.yahooapis.jp/search/local/V1/localSearch");
+    //var corsProxyUrl = new URL("https://cors-anywhere.herokuapp.com/");
+    var yahooLocSearchUrl = new URL("https://map.yahooapis.jp/search/local/V1/localSearch");
+    url = yahooLocSearchUrl;
     url.search = new URLSearchParams({
-        appid : "dj00aiZpPTJ1czdha250dHdvTSZzPWNvbnN1bWVyc2VjcmV0Jng9Yjg-",
+        appid : "dj00aiZpPVFubmU4Z3dLaXBMeCZzPWNvbnN1bWVyc2VjcmV0Jng9ZmI-",
         sort : "dist",
         results : 100,
         output : "json",
@@ -103,18 +105,45 @@ let searchAndDraw = async () => {
         lon : map.getCenter().lng,
         dist : dist,
         gc : genreQuery,
-        start : 1
+        start : 1,
+        callback : "?"
     });
 
+
+
     //業種検索のテスト
-    //https://map.yahooapis.jp/search/local/V1/localSearch?appid=dj00aiZpPTJ1czdha250dHdvTSZzPWNvbnN1bWVyc2VjcmV0Jng9Yjg-&gc=413001&lat=38.4769442&lon=140.3838833
-    "https://map.yahooapis.jp/search/local/V1/localSearch?appid=dj00aiZpPTJ1czdha250dHdvTSZzPWNvbnN1bWVyc2VjcmV0Jng9Yjg-&sort=dist&results=100&output=json&query=&lat=38.4769442&lon=140.3838833&dist=20&gc=&start=1"
+    //https://map.yahooapis.jp/search/local/V1/localSearch?callback=?appid=dj00aiZpPVFubmU4Z3dLaXBMeCZzPWNvbnN1bWVyc2VjcmV0Jng9ZmI-&gc=0413001&lat=38.4769442&lon=140.3838833&output=json
+    "https://map.yahooapis.jp/search/local/V1/localSearch?appid=dj00aiZpPTJ1czdha250dHdvTSZzPWNvbnN1bWVyc2VjcmV0Jng9Yjg-&sort=dist&results=100&output=json&query=&lat=38.4769442&lon=140.3838833&dist=20&gc=&start=1&callback=showResult"
     var result;
+/*
     try {
         //console.log(url) 
-        result = await getEntireResultsList(url);
+        //result = await getEntireResultsList(url);
+
+        await $http.json(url).success(function(data){
+            console.log(data);
+        });
     }
     catch(err){console.log("something went wrong: " + err.message)}
+*/
+
+
+var url = "https://map.yahooapis.jp/search/local/V1/localSearch?appid=dj00aiZpPVFubmU4Z3dLaXBMeCZzPWNvbnN1bWVyc2VjcmV0Jng9ZmI-&output=json&callback=?"
+
+$.getJSON(url, 
+    {
+        sort : "dist",
+        results : 100,
+        query : query,
+        lat : map.getCenter().lat,
+        lon : map.getCenter().lng,
+        dist : dist,
+        gc : genreQuery,
+        start : 1,
+    }, 
+    (data) => {
+    result = data["Feature"]
+    console.log(data)
 
     //重複要素(Gidが重複する要素)の削除
     let buf = []; 
@@ -161,7 +190,8 @@ let searchAndDraw = async () => {
         placeDataList.push({item : item, color : color, marker : marker, circle : circle, popup : popup});
     });
     placeDataList
-}
+    }
+)};
 
 const getResults = async function(url,pageNo = 1) {
     console.log(url)
@@ -170,7 +200,11 @@ const getResults = async function(url,pageNo = 1) {
     searchParam.set("start",pageNo);
     url.search = searchParam; 
     console.log(url)
-    var apiResults = await fetch((url),{ mode: 'same-origin',credentials: 'include'})
+    var apiResults = await fetch(url,{mode : "cors",credentials: "include",headers : {
+        "Accept": 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': "csrfToken",
+        'X-Requested-With': 'XMLHttpRequest',}})
         .then(resp => resp.json());
     return apiResults;
 }
@@ -337,5 +371,15 @@ const pickr = Pickr.create({
     }
 });
 
-
-
+/*
+      // HTTP GETでJSONデータを取得
+      $.getJSON(
+        // アクセス先のURLとしてYahoo!ブログ検索APIを指定
+        "https://map.yahooapis.jp/search/local/V1/localSearch?appid=dj00aiZpPVFubmU4Z3dLaXBMeCZzPWNvbnN1bWVyc2VjcmV0Jng9ZmI-&output=json&callback=?",
+        // キーワードをパラメータとして追加
+        { query: $('ラーメン').val() },
+        function(data) { // コールバック関数で結果データを処理
+            console.log(data)
+        }
+      );
+*/

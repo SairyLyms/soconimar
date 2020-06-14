@@ -1,68 +1,140 @@
-a, a:hover { color: #1450A8;}
-
-/* Map map */
-#mapCanvas img {
-  max-width: none;
+html {
+  font-size: 14px;
+}
+.btn {
+  border-radius: 2px;
 }
 
-.leaflet-google-layer{
-    z-index: 0 !important;
+.btn-small {
+  border-radius: 1px;
 }
 
-.leaflet-map-pane{
-    z-index: 100;
+.btn-large {
+  border-radius: 3px;
+}
+:root{
+  --font-family-sans-serif: "Helvetica Neue", Helvetica, Arial, "游ゴシック体", "Yu Gothic", YuGothic, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-.info {
-  font-family: 'Lato', sans-serif;
-  padding: 6px 8px;
-  background: #ffffff;
-  box-shadow: 0 0 15px rgba(0,0,0,0.2);
-  border-radius: 5px;
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, "游ゴシック体", "Yu Gothic", YuGothic, "Hiragino Kaku Gothic ProN", Meiryo, 'Open Sans', sans-serif;
+  line-height: 1.5
 }
 
-.info h4 {
-  margin: 0 0 5px;
-  color: #777;
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Helvetica Neue", Helvetica, Arial, "游ゴシック体", "Yu Gothic", YuGothic, "Hiragino Kaku Gothic ProN", Meiryo, 'Open Sans', sans-serif;
+  line-height: 1.5;
 }
 
-.results-count {
-  font-family: 'Lato', sans-serif;
-  padding: 6px 8px;
-  background: #ffffff;
-  box-shadow: 0 0 15px rgba(0,0,0,0.2);
-  border-radius: 5px;
+h1{
+  font-size: 1.8rem;
+}
+h2{
+  font-size: 1.6rem;
+}
+h3{
+  font-size: 1.4rem;
+}
+h4{
+  font-size: 1.25rem;
+}
+h5{
+  font-size: 1.1rem;
+}
+h6{
+  font-size: 1rem;
 }
 
-.filter-box { 
-  margin-top: 5px;
-  height: 15px; 
-  width: 15px;  
-  display: inline-block;
-  *border-right-width: 4px;
-  *border-bottom-width: 4px;
-  -webkit-border-radius: 10px;
-     -moz-border-radius: 10px;
-          border-radius: 10px;
-  -webkit-background-clip: padding-box;
-     -moz-background-clip: padding;
-          background-clip: padding-box; 
+.bottomspace30{margin-bottom:30px;}
+
+.leftcolor-blue{
+  padding-left: 10px ;
+  border-left-width: 5px ;
+  border-left-style: solid ;
+  border-left-color: #0b1644;
+}
+* {
+  text-align: justify;
 }
 
-.filter-yellow { background-color: #FFCC0D; }
-.filter-green { background-color: #10AC03; }
-.filter-blue { background-color: #1653A8; }
-.filter-purple { background-color: #6614AC; }
-.filter-red { background-color: #CC2537; }
-.filter-orange { background-color: #CD8518; }
-.filter-grey { background-color: #7B7B7B; }
-
-
-.mapLabels {
+.navbar-custom {
+  background-color: #0b1644;
+}
+/* change the brand and text color */
+.navbar-custom .navbar-brand,
+.navbar-custom .navbar-text {
+  color: rgba(255,255,255,1);
+}
+/* change the link color */
+.navbar-custom .navbar-nav .nav-link {
+  color: rgba(255,255,255,1);
+}
+/* change the color of active or hovered links */
+.navbar-custom .nav-item.active .nav-link,
+.navbar-custom .nav-item:hover .nav-link {
   color: #ffffff;
-  background: #000000;
-  font-size: 12px;
-  text-align: center;
-  padding: 2px 10px;
-  border-radius: 8px;
 }
+
+.btn-primary {
+  background:  #0b1644;
+  color:  #ffffff;
+}
+
+.btn-primary:hover, .btn-primary:focus, 
+.btn-primary:active, .btn-primary:active:focus, .btn-primary:active:hover, .btn-primary:active.focus,
+.btn-primary.active, .btn-primary.active:focus, .btn-primary.active:hover, .btn-primary.active.focus,
+.open > .dropdown-toggle.btn-primary, 
+.open > .dropdown-toggle.btn-primary:hover,
+.open > .dropdown-toggle.btn-primary:focus, 
+.open > .dropdown-toggle.btn-primary.focus,
+.btn-primary.disabled:hover, .btn-primary[disabled]:hover, fieldset[disabled] .btn-primary:hover,
+.btn-primary.disabled:focus, .btn-primary[disabled]:focus, fieldset[disabled] .btn-primary:focus,
+.btn-primary.disabled.focus, .btn-primary[disabled].focus, fieldset[disabled] .btn-primary.focus {
+  background:  #213a70;
+  color:  #ffffff;
+}
+
+.btn-primary.outline {
+  border: 3px solid  #213a70;
+  color:  #ffffff;
+}
+
+
+#menu {
+  background: #fff;
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  right: 20px;
+  border-radius: 3px;
+  width: 150px;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  font-family: 'Open Sans', sans-serif;
+  }
+   
+  #menu a {
+  font-size: 13px;
+  color: #404040;
+  display: block;
+  margin: 0;
+  padding: 0;
+  padding: 10px;
+  text-decoration: none;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  text-align: center;
+  }
+   
+  #menu a:last-child {
+    border: none;
+    }
+     
+    #menu a:hover {
+    color: #404040;
+    }
+     
+    #menu a.active {
+    color: #ffffff;
+    }
+     

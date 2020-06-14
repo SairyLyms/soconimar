@@ -10,9 +10,9 @@
 
     <!-- Styles -->
     <!-- Bootstrap cssS -->
-    <link rel="stylesheet" href="css/bootstrap.min.css">
-    <link rel="stylesheet" href="css/bootstrap-reboot.min.css">
-    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <!-- link rel="stylesheet" href="css/bootstrap-reboot.min.css" -->
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
     <link rel="stylesheet" href="css/custom.css"/>
 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
@@ -24,7 +24,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
 
     <!--script src="lib/ejs.min.js"></script-->
-    <script src="lib/jquery.address.js"></script>
+    <!--script src="lib/jquery.address.js"></script-->
     <!--script src="lib/jquery.csv.min.js"></script-->
     <!--script src="lib/moment.js"></script-->
     <!--script src="lib/geojson.min.js"></script-->
@@ -34,8 +34,9 @@
     <!--<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" /-->
     <!--script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script-->
     <!--script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script-->
-    <script src='https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.js'></script>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.css' rel='stylesheet' />
+    
     <!--script src="https://unpkg.com/mapbox-gl-leaflet/leaflet-mapbox-gl.js"></script-->
     <!--script src='lib/turf.min.js'></script-->
     <script src='https://npmcdn.com/mapbox-gl-circle/dist/mapbox-gl-circle.min.js'></script>
@@ -55,12 +56,18 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/> <!-- 'nano' theme -->
     <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
 
+    <!--D3.js-->
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <!--TopoJSON-->
+    <script src="https://unpkg.com/topojson@3"></script>
+
+
   </head>
   <body>
 
-    <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-2">
+    <nav class="navbar navbar-expand-md navbar-custom mb-2">
       <a class="navbar-brand" href="./index.html">
-        そこにまる。
+      <h1>そこにまる。</h1>
       </a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -69,7 +76,7 @@
       <div class="collapse navbar-collapse mr-auto" id="navbarsExampleDefault">
         <ul class="navbar-nav ml-auto">
           <li class='nav-item'>
-            <a class="nav-link active" href="/"><i class="fa fa-map-marker" aria-hidden="true"></i> Map</a>
+            <a class="nav-link active" href="./"><h2><i class="fa fa-map-marker" aria-hidden="true"></i>Map</h2></a>
           </li>
           <!--li class='nav-item'>
             <a class="nav-link" href="./about.html"><i class="fa fa-info-circle" aria-hidden="true"></i> About</a>
@@ -89,35 +96,20 @@
 
               <div class='row'>
                 <div class="col-md-12">
-                  <h3>ワード検索(施設のジャンル、名称)</h3>
+                  <h2 class= "leftcolor-blue">ワード検索</h2>
                   <div class="form-group">
-                      <input class='form-control' id='placeToSearch' placeholder='例:セブンイレブン' type='text'>
+                      <input class='form-control' id='placeToSearch' placeholder='例:郵便局、ラーメン' type='text'>
                   </div>
                 </div>
               </div>
 
               <div class='row'>
                 <div class="col-md-12">
-                  <h3>業種検索(施設のジャンル、名称)</h3>
+                  <h2 class= "leftcolor-blue">業種検索</h2>
                   <div class="form-group">
                     <div class='row'><div class="col-md-4">業種(大分類)</div><div class="col-md-8"><select class='form-control' id='genre1Selector'><option value="" disabled selected>未選択</option></select></div></div>
                     <div class='row'><div class="col-md-4">業種(中分類)</div><div class="col-md-8"><select class='form-control' id='genre2Selector'><option value="" disabled selected>未選択</option></select></div></div>
                     <div class='row'><div class="col-md-4">業種(小分類)</div><div class="col-md-8"><select class='form-control' id='genre3Selector'><option value="" disabled selected>未選択</option></select></div></div>
-                  </div>
-                </div>
-              </div>
-
-              <div class='row'>
-                <div class="col-md-12">
-                  <h3>中心地点</h3>
-                  <div class="input-group">
-                    <div class="input-group-prepend">
-                      <button class="btn btn-success" type="button" id="btnCurrentPosition" onclick="getCurrentPosition()"><i class='fa fa-compass'></i> 現在地</button>
-                    </div>
-                    <input type="text" class="form-control" id="placeToCenter" placeholder="" aria-label="" aria-describedby="basic-addon1">
-                    <div class="input-group-append">
-                      <button class="btn btn-primary" type="button" id="btnCenterPosition" onclick="setCenterPlace()">設定</button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -131,8 +123,8 @@
                 </div>
               </div-->
               <div class='row'>
-                <div class="col-md-4">
-                  <h3>円の半径</h3>
+                <div class="col-md-6">
+                  <h2 class= "leftcolor-blue">円の半径</h2>
                   <div class='input-group md-2'>
                       <input class='form-control' id='raduisToDraw' placeholder='1.0' type='number' value="1.0" min="0.0" step="0.1">
                       <div class="input-group-append">
@@ -140,23 +132,26 @@
                       </div>
                   </div>
                 </div>
-                <div class="col-md-4">
-                <h3>円の色</h3>
+                <div class="col-md-6">
+                <h2 class= "leftcolor-blue">円の色</h2>
                 <div class="color-picker"></div>
                 </div>
               </div>
               <div class="btn-group pull-right">
                 <button class='btn btn-primary' id="btnDraw" onclick="searchAndDraw()"><i class='fa fa-circle-thin'></i><i class='fa fa-pencil'></i> 円を描く</button>
                 <button class='btn btn-secondary' id="btnReset" title="Reset"onclick="clearAll()"><i class="fa fa-eraser" aria-hidden="true"></i> リセット</button>
+                <a href = "" id = "btnDownload" download=""><button class='btn btn-success' title="保存"><i class="fa fa-save" aria-hidden="true"></i> 保存</button></a>
               </div>
               <!--button class='btn btn-dark' id='btnViewMode' title='Change view'><i class='fa fa-list'></i> List view</button-->
-
               </div>
-            </div>
           </div>
-
-          <div class='col-md-8'>
+          <div class="alert alert-danger" role="alert" id="alertSeachResultIsZero" style = "visibility:hidden">
+            該当する施設が見つかりませんでした。検索ワードもしくは業種を確認してください。
+          </div>
+          </div>
+          <div class='col-md-8 border'>
             <div id='mapCanvas' style="display: block"></div>
+            <nav id="menu"></nav>
             <div id="listCanvas" style="display: none">
               <h2 class='list-header hidden-xs'>Search results <small id='list-result-count'></small></h2>
               

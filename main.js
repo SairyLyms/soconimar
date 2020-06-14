@@ -18,11 +18,11 @@ var genre1Set = new Set()
 var genre2Set = new Set() 
 var genre3Set = new Set()
 var genreQuery = ""
-
+var layerIDs = [];
+var population2020JSON;
 
 
 document.addEventListener("DOMContentLoaded", function(){
-    //document.getElementById("search").onclick = buttonClickHandler;
     init();
 }
 )
@@ -30,16 +30,31 @@ document.addEventListener("DOMContentLoaded", function(){
 let init = () => {
     map = new mapboxgl.Map({
         container: 'mapCanvas',
+        //style: 'mapbox://styles/mapbox/streets-v11', // stylesheet location
         style: './lib/std.json', // stylesheet location
-        //center: [139.767144, 35.680621],
-        center: [140.3838833,38.4769442],  
+        center: [139.767125,35.681236],  
         zoom: 12,
         maxZoom: 17.99,
         minZoom: 4,
-        localIdeographFontFamily: false
+        localIdeographFontFamily: false,
+        preserveDrawingBuffer: true
         });
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    map.addControl(new mapboxgl.ScaleControl());
+    map.addControl(new mapboxgl.GeolocateControl({
+        positionOptions: {
+        enableHighAccuracy: true
+        },
+            trackUserLocation: true
+        }),'top-left');
+    map.addControl(new mapboxgl.NavigationControl(), 'top-left');
+    map.addControl(new mapboxgl.ScaleControl(),"bottom-right");
+
+ /* 1kmメッシュ人口データ
+    $.getJSON("pop2020.topojson",function(x){
+        //console.log(x)
+        population2020JSON = topojson.feature(x, x.objects.pop2020)
+        //console.log(population2020JSON)
+    });
+*/
     getGenreObject();
 
 } 
@@ -91,47 +106,16 @@ $("#genre1Selector, #genre2Selector, #genre3Selector").change( event => {
 let searchAndDraw = async () => {
 
     var query = document.getElementById("placeToSearch").value;
+    var alertZeroResult = document.getElementById("alertSeachResultIsZero");
     var dist = 20;
-    //var corsProxyUrl = new URL("https://cors-anywhere.herokuapp.com/");
-    var yahooLocSearchUrl = new URL("https://map.yahooapis.jp/search/local/V1/localSearch");
-    url = yahooLocSearchUrl;
-    url.search = new URLSearchParams({
-        appid : "dj00aiZpPVFubmU4Z3dLaXBMeCZzPWNvbnN1bWVyc2VjcmV0Jng9ZmI-",
-        sort : "dist",
-        results : 100,
-        output : "json",
-        query : query,
-        lat : map.getCenter().lat,
-        lon : map.getCenter().lng,
-        dist : dist,
-        gc : genreQuery,
-        start : 1,
-        callback : "?"
-    });
-
-
 
     //業種検索のテスト
     //https://map.yahooapis.jp/search/local/V1/localSearch?callback=?appid=dj00aiZpPVFubmU4Z3dLaXBMeCZzPWNvbnN1bWVyc2VjcmV0Jng9ZmI-&gc=0413001&lat=38.4769442&lon=140.3838833&output=json
     "https://map.yahooapis.jp/search/local/V1/localSearch?appid=dj00aiZpPTJ1czdha250dHdvTSZzPWNvbnN1bWVyc2VjcmV0Jng9Yjg-&sort=dist&results=100&output=json&query=&lat=38.4769442&lon=140.3838833&dist=20&gc=&start=1&callback=showResult"
     var result;
-/*
-    try {
-        //console.log(url) 
-        //result = await getEntireResultsList(url);
 
-        await $http.json(url).success(function(data){
-            console.log(data);
-        });
-    }
-    catch(err){console.log("something went wrong: " + err.message)}
-*/
-
-
-var url = "https://map.yahooapis.jp/search/local/V1/localSearch?appid=dj00aiZpPVFubmU4Z3dLaXBMeCZzPWNvbnN1bWVyc2VjcmV0Jng9ZmI-&output=json&callback=?"
-
-$.getJSON(url, 
-    {
+    var url = "https://map.yahooapis.jp/search/local/V1/localSearch?appid=dj00aiZpPVFubmU4Z3dLaXBMeCZzPWNvbnN1bWVyc2VjcmV0Jng9ZmI-&output=json&callback=?"
+    var searchParam =  {
         sort : "dist",
         results : 100,
         query : query,
@@ -140,196 +124,348 @@ $.getJSON(url,
         dist : dist,
         gc : genreQuery,
         start : 1,
-    }, 
-    (data) => {
-    result = data["Feature"]
-    console.log(data)
+    }
+    try {
+        alertZeroResult.style.visibility = "hidden"
+        result = await getEntireJsonResultsList(url,searchParam);
+        console.log(result) 
+    }
+    catch(err){
+        console.log("something went wrong: " + err.message)
+        alertZeroResult.style.visibility = "visible" 
+    }
 
-    //重複要素(Gidが重複する要素)の削除
-    let buf = []; 
-    result.forEach(v => {
-        if(!buf.map(item => item["Gid"]).includes(v["Gid"])){
-            buf.push(v);
-            console.log(v["Name"]);
+
+
+    var idBase = result.features[0].properties.keyWord + "@" + result.features[0].properties.baseCoordinates[0].toString() + "+" + result.features[0].properties.baseCoordinates[1].toString()
+    
+    map.addSource(idBase, {
+        'type': 'geojson',
+        "data": result
+    });
+/*
+    map.addSource("population2020", {
+        'type': 'geojson',
+        "data": population2020JSON
+    });
+*/
+    map.addLayer({
+        'id': idBase + "&circles",
+        'type': 'circle',
+        'source': idBase,
+        'paint': {
+        'circle-radius': {
+            stops: [[0, 0],
+                    [20, metersToPixelsAtMaxZoom(document.getElementById("raduisToDraw").value * 1000, map.getCenter().lat)]],
+            base: 2},
+        'circle-color': ["get","marker-color"],
+        "circle-opacity": ['interpolate',['linear'],
+                          ['zoom'],10,0.1,20,0.03],
+        "circle-stroke-width": 1,
+        "circle-stroke-color": ["get","marker-color"],
+        "circle-stroke-opacity":['interpolate',['linear'],
+                                ['zoom'],10,0.8,20,0.03]
+        },
+        });
+
+    map.addLayer({
+        'id': idBase +"&markers",
+        'type': 'circle',
+        'source': idBase,
+        'paint': {
+        'circle-radius': 6,
+        'circle-color': ["get","marker-color"],
+        "circle-opacity": 0.5,
+        "circle-stroke-width": 1,
+        "circle-stroke-color": "#FFF"
+        },
+        });
+/*
+    map.addLayer(
+        {
+        'id': 'population2020',
+        'type': 'fill',
+        'source': "population2020",
+        'layout': {},
+        'paint': {
+        'fill-color': '#f08',
+        'fill-opacity': 0.4
         }
     });
-    result = buf;
-    console.log(result)
-   //検索結果の表示
-   result.forEach(item => {
-    let lng = parseFloat(item.Geometry.Coordinates.split(",")[0]);
-    let lat = parseFloat(item.Geometry.Coordinates.split(",")[1]);
-    let radius = document.getElementById("raduisToDraw").value * 1000;  
-    let color = pickr.getColor().toHEXA().toString()
+*/
+    //ヒートマップ
+    map.addLayer(
+        {
+        'id': idBase +"&heatmap",
+        'type': 'heatmap',
+        'source': idBase,
+        //'maxzoom': 9,
+        'paint': {
+        // Increase the heatmap weight based on frequency and property magnitude
+        //'heatmap-weight': ['interpolate',['linear'],
+        //                  ['get', 'mag'],0,0,6,1],
+        // Increase the heatmap color weight weight by zoom level
+        // heatmap-intensity is a multiplier on top of heatmap-weight
+        //'heatmap-intensity': ['interpolate',['linear'],
+        //                     ['zoom'],0,1,9,3],
 
-    var circle = new MapboxCircle({lat: lat, lng:lng}, radius, {
-        editable: false,
-        fillColor: color
-        }).addTo(map);
-
-    var googleSearchURL = new URL("https://google.com/search")
-    googleSearchURL.search = new URLSearchParams({q : item.Name + " " + item.Property.Address})
+        // Color ramp for heatmap.  Domain is 0 (low) to 1 (high).
+        // Begin color ramp at 0-stop with a 0-transparancy color
+        // to create a blur-like effect.
+        'heatmap-color': ['interpolate',['linear'],
+                         ['heatmap-density'],
+                          0,'rgba(33,102,172,0)',
+                        0.2,'rgb(103,169,207)',
+                        0.4,'rgb(209,229,240)',
+                        0.6,'rgb(253,219,199)',
+                        0.8,'rgb(239,138,98)',
+                        1,'rgb(178,24,43)'],
+        // Adjust the heatmap radius by zoom level
+        //'heatmap-radius': ['interpolate',['linear'],
+        //                  ['zoom'],0,2,9,20],
+        // Transition from heatmap to circle layer by zoom level
+        'heatmap-opacity': ['interpolate',['linear'],
+                           ['zoom'],10,0.8,20,0.2]
+            }
+        },
+        //'waterway-label'
+        );
     
-   // let link = $("<a>").attr({href : googleSearchURL.toString(),target: '_blank'});
+    map.on("click",idBase +"&markers", (event) => {
+            var coordinates = event.features[0].geometry.coordinates.slice();
+            var name = event.features[0].properties.name;
+            var address = event.features[0].properties.address;
+            var tel = event.features[0].properties.tel;            
+            
+            while (Math.abs(event.lngLat.lng - coordinates[0]) > 180) {
+                coordinates[0] += event.lngLat.lng > coordinates[0] ? 360 : -360;
+                }
+        
+            var googleSearchURL = new URL("https://google.com/search")
+            googleSearchURL.search = new URLSearchParams({q : name + " " + address})
+            var info = $("<div>").append($("<a>").attr({href : googleSearchURL.toString(),target: '_blank'})
+                        .append($("<h5>").text(name)))
+                        .append($("<ul>")
+                        .append($("<li>").text(address))
+                        .append($("<li>").text(tel))
+                        ).append($('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script><ins class="adsbygoogle" style="display:block" data-ad-format="fluid" data-ad-layout-key="-hy-3+1f-3d+2z" data-ad-client="ca-pub-1273466083793643" data-ad-slot="6313164976"></ins><script> (adsbygoogle = window.adsbygoogle || []).push({});</script>')).html();
 
-    var info = $("<div>").append($("<a>").attr({href : googleSearchURL.toString(),target: '_blank'})
-                .append($("<h5>").text(item.Name)))
-                .append($("<ul>")
-                .append($("<li>").text(item.Property.Address))
-                .append($("<li>").text(item.Property.Tel1))
-                ).html();
-    var popup = new mapboxgl.Popup({maxWidth:320})
-        .setHTML(info);
+            new mapboxgl.Popup({maxWidth:320})
+                .setLngLat(coordinates)
+                .setHTML(info)
+                .addTo(map)
+    })
 
 
-    var marker = new mapboxgl.Marker({color: color})
-        .setLngLat([lng,lat])
-        .setPopup(popup)
-        .addTo(map);
+    //レイヤ選択メニュー
+    layerIDs.push(idBase)
 
-        placeDataList.push({item : item, color : color, marker : marker, circle : circle, popup : popup});
+    //layerIDs.forEach(el => {
+        var id = idBase;
+
+        // Add checkbox and label elements for the layer.
+        var circleMenuDiv = document.createElement("div"); 
+        var circleOnOff = document.createElement('input');
+        circleOnOff.type = 'checkbox';
+        circleOnOff.id = idBase + "&circles";
+        circleOnOff.checked = true;
+        var labelCircleOnOff = document.createElement('label');
+        labelCircleOnOff.setAttribute('for',idBase + "&circles");
+        labelCircleOnOff.textContent = "円の表示";
+
+        var HeatMapMenuDiv = document.createElement("div"); 
+        var heatMapOnOff = document.createElement('input');
+        heatMapOnOff.type = 'checkbox';
+        heatMapOnOff.id = idBase +"&heatmap";
+        heatMapOnOff.checked = true;
+        var labelheatMapOnOff = document.createElement('label');
+        labelheatMapOnOff.setAttribute('for', idBase +"&heatmap");
+        labelheatMapOnOff.textContent = "ヒートマップの表示";
+
+        heatMapOnOff.addEventListener("change" , () => {
+            if(this.checked){}
+            else {}
+       }) 
+        
+        circleMenuDiv.appendChild(circleOnOff);
+        circleMenuDiv.appendChild(labelCircleOnOff);
+        HeatMapMenuDiv.appendChild(heatMapOnOff);
+        HeatMapMenuDiv.appendChild(labelheatMapOnOff);
+
+        circleOnOff.addEventListener("change" , (event) => {
+            var visibility = map.getLayoutProperty(event.currentTarget.id, 'visibility');
+            if(event.currentTarget.checked == true && event.currentTarget.parentElement.parentElement.className == "active" && visibility == 'none'){
+                map.setLayoutProperty(event.currentTarget.id, 'visibility', 'visible') 
+            }
+            else {
+                map.setLayoutProperty(event.currentTarget.id, 'visibility', 'none')
+            }
+       })
+       
+        heatMapOnOff.addEventListener("change" , (event) => {
+            var visibility = map.getLayoutProperty(event.currentTarget.id, 'visibility');
+            if(event.currentTarget.checked == true && event.currentTarget.parentElement.parentElement.className == "active" && visibility == 'none'){
+                map.setLayoutProperty(event.currentTarget.id, 'visibility', 'visible') 
+            }
+            else {
+                map.setLayoutProperty(event.currentTarget.id, 'visibility', 'none')
+            }
+      }) 
+
+        var linkdiv = document.createElement('div');
+        var link = document.createElement('a');
+        //var style = document.createElement('style');
+        //style.appendChild(document.createTextNode(css));
+        //document.getElementsByTagName('head')[0].appendChild(style);
+
+        link.href = '#';
+        link.className = 'active';
+        linkdiv.className = link.className;
+        link.textContent = idBase.split(" @")[0];
+        link.id = idBase;
+        link.style.background = result.features[0].properties["marker-color"]
+
+        link.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if(this.className == "active"){
+                map.getStyle().layers.forEach(el => {
+                    if(el.id.includes(e.currentTarget.id)){
+                        map.setLayoutProperty(el.id, 'visibility', 'none');
+                }})
+                    this.className = '';
+                    this.style.background = "#f8f8f8"
+                    circleOnOff.checked = false;
+                    heatMapOnOff.checked = false;
+            } else {
+                map.getStyle().layers.forEach(el => {
+                    if(el.id.includes(e.currentTarget.id)){
+                        map.setLayoutProperty(el.id, 'visibility', 'visible');
+                        this.style.background = map.getSource(el.source)._data.features[0].properties["marker-color"];
+
+                }})
+                    this.className = 'active';
+                    circleOnOff.checked = true;
+                    heatMapOnOff.checked = true;
+                    }
+                }
+
+        //this.parentElement.className = this.className;
+        var layers = document.getElementById('menu');
+        linkdiv.appendChild(link)
+        linkdiv.appendChild(circleMenuDiv);
+        linkdiv.appendChild(HeatMapMenuDiv); 
+        layers.appendChild(linkdiv);
+
+    //});
+
+    // Change the cursor to a pointer when the mouse is over the places layer.
+    map.on('mouseenter', idBase +"&markers", function() {
+        map.getCanvas().style.cursor = 'pointer';
     });
-    placeDataList
+
+    // Change it back to a pointer when it leaves.
+    map.on('mouseleave', idBase +"&markers", function() {
+        map.getCanvas().style.cursor = '';
+    });
+
+    map.on('zoom', function() {
+        console.log(map.getZoom());
+    });
+};
+
+
+
+const getEntireJsonResultsList = async (url,searchParam) => {
+    //初回APIリクエスト
+    var apiResult = await $.getJSON(url,searchParam,data => {console.log(data)});
+    var results = apiResult["Feature"]
+    //応答によって処理を切り替え
+    var n = parseInt(apiResult["ResultInfo"].Total / searchParam.results)
+    if(n >= 4){n = 4};
+    for(let i = 1; i <= n;i++){
+        searchParam.start = i * searchParam.results;
+        await $.getJSON(url,searchParam,data => {
+            console.log(data);
+            results = results.concat(data["Feature"])
+        });
     }
-)};
+    //return results;
+    //結果取得後の処理
+    var featuresJSON = results.reduce((features,el) => {
+        let keyWord = ""
+        
+        switch(searchParam.gc.length){
+            case 2 : keyWord = genre1Set[searchParam.gc];break; 
+            case 4 : keyWord = genre2Set[searchParam.gc];break;
+            case 7 : keyWord = genre3Set[searchParam.gc];break;
+            default :  break;
+        }
 
-const getResults = async function(url,pageNo = 1) {
-    console.log(url)
-    var searchParam = new URLSearchParams(url.search)
-    console.log(searchParam.toString())
-    searchParam.set("start",pageNo);
-    url.search = searchParam; 
-    console.log(url)
-    var apiResults = await fetch(url,{mode : "cors",credentials: "include",headers : {
-        "Accept": 'application/json',
-        'Content-Type': 'application/json',
-        'X-CSRF-Token': "csrfToken",
-        'X-Requested-With': 'XMLHttpRequest',}})
-        .then(resp => resp.json());
-    return apiResults;
-}
+        keyWord += " " + searchParam.query + " "; 
 
-const getEntireResultsList = async function(url,pageNo = 1) {
-  var searchParam = new URLSearchParams(url.search)
-  const apiResults = await getResults(url,pageNo);
-  const results = apiResults["Feature"]
-  //console.log("Retreiving data from API for page : " + pageNo);
-  
-  if (apiResults.ResultInfo.Count >= parseInt(searchParam.get("results"))) {
-    //console.log(results)
-    return results.concat(await getEntireResultsList(url,pageNo+1*parseInt(searchParam.get("results"))));
-  } else {
-    //console.log(results)
-    return results;
-  }
+        if(keyWord == "  "){keyWord = "未選択 "}
+
+        var feature = {
+            "type" : "Feature",
+            "geometry" : {
+                "type"        : "Point",
+                "coordinates" : [parseFloat(el.Geometry.Coordinates.split(",")[0]),parseFloat(el.Geometry.Coordinates.split(",")[1])]
+            },
+            "properties" : {
+                "name"      : el.Name,
+                "id"        : parseInt(el.Id),
+                "gid"       : el.Gid,
+                "address"   : el.Property.Address,
+                "tel"       : el.Property.Tel1,
+                "genre"     : el.Property.Genre,
+                "title"     : el.Name,
+                "description": el.Property.Genre.Name,
+                "marker-color": pickr.getColor().toHEXA().toString(),
+                "query" : searchParam.query,
+                "genreCode" : searchParam.gc,
+                "keyWord" : keyWord,
+                "baseCoordinates" : [searchParam.lon,searchParam.lat]
+            }
+        }
+        if(!Object.values(features).includes(el.Gid)){
+            features.push(feature)
+        }
+        return features;
+        },[])
+
+    var resultsGeoJSON = {
+        "type" : "FeatureCollection",
+        "features" : featuresJSON
+    }   
+
+    return resultsGeoJSON;
+
 };
 
 let clearAll = () => {
-    placeDataList.forEach(element => {
-        element.marker.remove();
-        element.circle.remove();
-        element.popup.remove();
-    })
-    placeDataList = [];
-}
-
-//中心地点の設定
-let setCenterPlace = () => {
-    let keyword = document.getElementById("placeToCenter").value;
-    let requst = {
-        query : keyword,
-        locationBias : map.getBounds(),
-        fields: ['name', 'geometry'],
-    };
-
-    service = new google.maps.places.PlacesService(map)
-    service.findPlaceFromQuery(requst,(result,status,pagination)=>{
-       if(status === google.maps.places.PlacesServiceStatus.OK){
-            moveCenterPosition(result[0].geometry.location);
-        }
-    });
-}
-
-let searchPlace = (latLngBounds,keyword) => {
-    let requst = {
-        bounds : latLngBounds,
-        query : keyword,
-        color : pickr.getColor().toHEXA().toString(),
-        radius : radius
-    };
-    let results = []
-    service = new google.maps.places.PlacesService(map)
-    service.textSearch(requst,(result,status,pagination)=>{
-        if(status === google.maps.places.PlacesServiceStatus.OK){
-            result.forEach(element => results.push(element));
-            //検索結果の読み込みが継続する場合
-            if(pagination.hasNextPage){
-                pagination.nextPage();
-            }
-            else{
-            //読み込み完了後の処理
-            displayResult(results);
-            }
-        }
-    });
+    location.reload();
 }
 
 
-//現在地の取得と表示
-function getCurrentPosition(){
-    // Try HTML5 geolocation.
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-            var pos = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-            };
-            moveCenterPosition(pos);
-                     
-        }, function() {
-            handleLocationError(false, infoWindow, map.getCenter());
-        });
-        } else {
-        // Browser doesn't support Geolocation
-        handleLocationError(false, infoWindow, map.getCenter());
-        }
+$('#btnDownload').click(function() {
+    if(map.getStyle().layers.slice(-1)[0].id.includes(" @")){
+        this.download = "SoconimarMap" + map.getStyle().layers.slice(-1)[0].id.split(" @")[0] + ".png"
     }
-    
+    else{
+        this.download = "SoconimarMap.png" 
+    }
+    var img = map.getCanvas().toDataURL('image/png')
+    this.href = img
+})
 
-//現在地取得不可の場合
-function handleLocationError(browserHasGeolocation, infoWindow, pos)
-{
-    infoWindow.setPosition(pos);
-    infoWindow.setContent(browserHasGeolocation ?
-                          'Error: The Geolocation service failed.' :
-                          'Error: Your browser doesn\'t support geolocation.');
-    infoWindow.open(map);
-}
-
-let moveCenterPosition = (pos) => {
-    map.panTo(pos);
-
-    currentPositionMarker = new MarkerWithLabel({
-        map: map,
-        position: pos,
-        icon: {
-            url:'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
-            scaledSize : new google.maps.Size(32, 32)
-        },
-        //labelContent: "",                              //ラベル文字
-        //labelAnchor: new google.maps.Point(-10, 25),   //ラベル文字の基点
-        //labelClass: 'mapLabels',                       //CSSのクラス名
-        //labelStyle: {opacity: 0.8},                    //透過度
-        animation: google.maps.Animation.DROP,
-    });
-}
 
 //カラーピッカー
 // Simple example, see optional options for more configuration.
 const pickr = Pickr.create({
     el: '.color-picker',
     theme: 'nano', // or 'monolith', or 'nano'
-    default: '#0275d8',
+    default: '#0b1644',
     swatches: [
         'rgba(244, 67, 54, 1)',
         'rgba(233, 30, 99, 1)',
@@ -353,6 +489,7 @@ const pickr = Pickr.create({
         preview: false,
         opacity: false,
         hue: false,
+        comparison: false,
 
         // Input / output Options
         interaction: {
@@ -371,15 +508,5 @@ const pickr = Pickr.create({
     }
 });
 
-/*
-      // HTTP GETでJSONデータを取得
-      $.getJSON(
-        // アクセス先のURLとしてYahoo!ブログ検索APIを指定
-        "https://map.yahooapis.jp/search/local/V1/localSearch?appid=dj00aiZpPVFubmU4Z3dLaXBMeCZzPWNvbnN1bWVyc2VjcmV0Jng9ZmI-&output=json&callback=?",
-        // キーワードをパラメータとして追加
-        { query: $('ラーメン').val() },
-        function(data) { // コールバック関数で結果データを処理
-            console.log(data)
-        }
-      );
-*/
+const metersToPixelsAtMaxZoom = (meters, latitude) =>
+  meters / 0.075 / Math.cos(latitude * Math.PI / 180)

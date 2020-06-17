@@ -43,7 +43,7 @@ let init = () => {
         positionOptions: {
         enableHighAccuracy: true
         },
-            trackUserLocation: true
+        trackUserLocation: true
         }),'top-left');
     map.addControl(new mapboxgl.NavigationControl(), 'top-left');
     map.addControl(new mapboxgl.ScaleControl(),"bottom-right");
@@ -82,7 +82,211 @@ var repalceOptions = (elementId,newOptions) => {
     $.each(newOptions,(value,key) => {
         $(elementId).append($("<option></option>")
        .attr("value", value).text(key));
-    });}
+    })
+;}
+
+class Places {
+    constructor(query,genreCode){
+        this.query = query
+        this.genreCode = genreCode
+        this.result
+        this.mapId
+        this.menu;
+    }
+    async search(){
+        var alertZeroResult = document.getElementById("alertSeachResultIsZero");
+        var url = "https://map.yahooapis.jp/search/local/V1/localSearch?appid=dj00aiZpPVFubmU4Z3dLaXBMeCZzPWNvbnN1bWVyc2VjcmV0Jng9ZmI-&output=json&callback=?"
+        var searchParam =  {
+            sort : "dist",
+            results : 100,
+            query : this.query,
+            lat : map.getCenter().lat,
+            lon : map.getCenter().lng,
+            dist : 20,
+            gc : this.genreCode,
+            start : 1,
+        }
+        //try {
+            alertZeroResult.style.visibility = "hidden"
+            this.result = await getEntireJsonResultsList(url,searchParam);
+            this.mapId = this.result.features[0].properties.keyWord + this.result.features[0].properties.baseCoordinates[0].text + this.result.features[0].properties.baseCoordinates[1].text 
+            map.addSource(this.mapId,{
+                'type': 'geojson',
+                "data": this.result
+            });
+            this.addLayer()
+            console.log(this.result)
+        //}
+        //catch(err){
+        //    console.log("something went wrong: " + err.message)
+        //    alertZeroResult.style.visibility = "visible" 
+        //}
+    }
+    addLayer(){
+        map.addLayer({
+            'id': this.mapId + "&circles",
+            'type': 'circle',
+            'source': this.mapId,
+            'paint': {
+            'circle-radius': {
+                stops: [[0, 0],
+                        [20, metersToPixelsAtMaxZoom(document.getElementById("raduisToDraw").value * 1000, map.getCenter().lat)]],
+                base: 2},
+            'circle-color': ["get","marker-color"],
+            "circle-opacity": ['interpolate',['linear'],
+                              ['zoom'],10,0.1,20,0.03],
+            "circle-stroke-width": 1,
+            "circle-stroke-color": ["get","marker-color"],
+            "circle-stroke-opacity":['interpolate',['linear'],
+                                    ['zoom'],10,0.8,20,0.03]
+            },
+            });
+    
+        map.addLayer({
+            'id': this.mapId + "&markers",
+            'type': 'circle',
+            'source': this.mapId,
+            'paint': {
+            'circle-radius': 6,
+            'circle-color': ["get","marker-color"],
+            "circle-opacity": 0.5,
+            "circle-stroke-width": 1,
+            "circle-stroke-color": "#FFF"
+            },
+            });
+                //ヒートマップ
+        map.addLayer(
+            {
+            'id': this.mapId +"&heatmap",
+            'type': 'heatmap',
+            'source': this.mapId,
+            //'maxzoom': 9,
+            'paint': {
+            // Increase the heatmap weight based on frequency and property magnitude
+            //'heatmap-weight': ['interpolate',['linear'],
+            //                  ['get', 'mag'],0,0,6,1],
+            // Increase the heatmap color weight weight by zoom level
+            // heatmap-intensity is a multiplier on top of heatmap-weight
+            //'heatmap-intensity': ['interpolate',['linear'],
+            //                     ['zoom'],0,1,9,3],
+
+            // Color ramp for heatmap.  Domain is 0 (low) to 1 (high).
+            // Begin color ramp at 0-stop with a 0-transparancy color
+            // to create a blur-like effect.
+            'heatmap-color': ['interpolate',['linear'],
+                                ['heatmap-density'],
+                                0,'rgba(33,102,172,0)',
+                            0.2,'rgb(103,169,207)',
+                            0.4,'rgb(209,229,240)',
+                            0.6,'rgb(253,219,199)',
+                            0.8,'rgb(239,138,98)',
+                            1,'rgb(178,24,43)'],
+            // Adjust the heatmap radius by zoom level
+            //'heatmap-radius': ['interpolate',['linear'],
+            //                  ['zoom'],0,2,9,20],
+            // Transition from heatmap to circle layer by zoom level
+            'heatmap-opacity': ['interpolate',['linear'],
+                                ['zoom'],10,0.8,20,0.2]
+                }
+            },
+            //'waterway-label'
+            );
+        map.on("click",this.mapId + "&markers", (event) => {
+            var coordinates = event.features[0].geometry.coordinates.slice();
+            var name = event.features[0].properties.name;
+            var address = event.features[0].properties.address;
+            var tel = event.features[0].properties.tel;            
+            
+            while (Math.abs(event.lngLat.lng - coordinates[0]) > 180) {
+                coordinates[0] += event.lngLat.lng > coordinates[0] ? 360 : -360;
+                }
+        
+            var googleSearchURL = new URL("https://google.com/search")
+            googleSearchURL.search = new URLSearchParams({q : name + " " + address})
+            var info = $("<div>").append($("<a>").attr({href : googleSearchURL.toString(),target: '_blank'})
+                        .append($("<h5>").text(name)))
+                        .append($("<ul>")
+                        .append($("<li>").text(address))
+                        .append($("<li>").text(tel))
+                        ).append($('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script><ins class="adsbygoogle" style="display:block" data-ad-format="fluid" data-ad-layout-key="-hy-3+1f-3d+2z" data-ad-client="ca-pub-1273466083793643" data-ad-slot="6313164976"></ins><script> (adsbygoogle = window.adsbygoogle || []).push({});</script>')).html();
+
+            new mapboxgl.Popup({maxWidth:320})
+                .setLngLat(coordinates)
+                .setHTML(info)
+                .addTo(map)
+            });
+        // Change the cursor to a pointer when the mouse is over the places layer.
+        map.on('mouseenter', this.mapId + "&markers", function() {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+
+        // Change it back to a pointer when it leaves.
+        map.on('mouseleave', this.mapId + "&markers", function() {
+            map.getCanvas().style.cursor = '';
+        });
+
+        var menu = new Menu(this.mapId,this.result)
+        menu.addItem(this.mapId + "&circles","円")
+        menu.addItem(this.mapId + "&markers","マーカー")
+        menu.addItem(this.mapId + "&heatmap","ヒートマップ")
+    }
+    removeLayer(){
+        map.removeSource(mapId)
+        map.getStyle().layers.forEach(el => {
+            if(el.id.includes(mapId)){
+                map.removeLayer(el.id)
+            } 
+        })
+    }
+}
+
+class Menu{
+    constructor(mapId,result){
+        this.mapId = mapId; 
+        this.keyWord = result.features[0].properties["keyWord"]
+        this.linkdiv = document.createElement('div');
+        this.link = document.createElement('a');
+        this.layers = document.getElementById('menu');
+        this.link.href = '#';
+        this.link.className = 'active';
+        this.linkdiv.className = this.link.className;
+        this.linkdiv.id = this.mapId;
+        this.link.textContent = this.keyWord;
+        this.link.style.background = result.features[0].properties["marker-color"]
+        this.link.addEventListener("dblclick", (event) => {
+                this.removeItem()
+            })
+        this.linkdiv.appendChild(this.link)
+        this.layers.appendChild(this.linkdiv);
+    }
+
+    addItem(itemId,menuContent){
+        var onOff = document.createElement('input');
+        onOff.type = 'checkbox';
+        onOff.id = itemId;
+        onOff.checked = true;
+        var labelOnOff = document.createElement('label');
+        labelOnOff.setAttribute('for',this.menuId);
+        labelOnOff.textContent = menuContent;
+        var menuDiv = document.createElement("div");
+        menuDiv.appendChild(onOff);
+        menuDiv.appendChild(labelOnOff);
+        menuDiv.id = itemId;
+        onOff.addEventListener("change" , (event) => {
+            var visibility = map.getLayoutProperty(event.currentTarget.id, 'visibility');
+            if(event.currentTarget.checked == true && visibility == 'none'){
+                map.setLayoutProperty(event.currentTarget.id, 'visibility', 'visible') 
+            }
+            else {
+                map.setLayoutProperty(event.currentTarget.id, 'visibility', 'none')
+            }
+        })
+        this.linkdiv.appendChild(menuDiv); 
+    }
+    removeItem(){
+        document.getElementById(this.mapId).textContent = null;
+    }
+}
 
 
 //業種が変更された場合の動作
@@ -100,6 +304,11 @@ $("#genre1Selector, #genre2Selector, #genre3Selector").change( event => {
         repalceOptions("#genre3Selector",genre3Options);
     }
     genreQuery = value;
+})
+
+$("#btnDraw").on("click",event => {
+    places = new Places(document.getElementById("placeToSearch").value,genreQuery)
+    places.search()
 })
 
     
@@ -149,37 +358,7 @@ let searchAndDraw = async () => {
         "data": population2020JSON
     });
 */
-    map.addLayer({
-        'id': idBase + "&circles",
-        'type': 'circle',
-        'source': idBase,
-        'paint': {
-        'circle-radius': {
-            stops: [[0, 0],
-                    [20, metersToPixelsAtMaxZoom(document.getElementById("raduisToDraw").value * 1000, map.getCenter().lat)]],
-            base: 2},
-        'circle-color': ["get","marker-color"],
-        "circle-opacity": ['interpolate',['linear'],
-                          ['zoom'],10,0.1,20,0.03],
-        "circle-stroke-width": 1,
-        "circle-stroke-color": ["get","marker-color"],
-        "circle-stroke-opacity":['interpolate',['linear'],
-                                ['zoom'],10,0.8,20,0.03]
-        },
-        });
 
-    map.addLayer({
-        'id': idBase +"&markers",
-        'type': 'circle',
-        'source': idBase,
-        'paint': {
-        'circle-radius': 6,
-        'circle-color': ["get","marker-color"],
-        "circle-opacity": 0.5,
-        "circle-stroke-width": 1,
-        "circle-stroke-color": "#FFF"
-        },
-        });
 /*
     map.addLayer(
         {
@@ -314,9 +493,6 @@ let searchAndDraw = async () => {
 
         var linkdiv = document.createElement('div');
         var link = document.createElement('a');
-        //var style = document.createElement('style');
-        //style.appendChild(document.createTextNode(css));
-        //document.getElementsByTagName('head')[0].appendChild(style);
 
         link.href = '#';
         link.className = 'active';
@@ -350,24 +526,12 @@ let searchAndDraw = async () => {
                     }
                 }
 
-        //this.parentElement.className = this.className;
         var layers = document.getElementById('menu');
         linkdiv.appendChild(link)
         linkdiv.appendChild(circleMenuDiv);
         linkdiv.appendChild(HeatMapMenuDiv); 
         layers.appendChild(linkdiv);
 
-    //});
-
-    // Change the cursor to a pointer when the mouse is over the places layer.
-    map.on('mouseenter', idBase +"&markers", function() {
-        map.getCanvas().style.cursor = 'pointer';
-    });
-
-    // Change it back to a pointer when it leaves.
-    map.on('mouseleave', idBase +"&markers", function() {
-        map.getCanvas().style.cursor = '';
-    });
 
     map.on('zoom', function() {
         console.log(map.getZoom());
